@@ -1,42 +1,35 @@
-# ---- BASE STAGE ----
-FROM node:20-alpine AS base
+# Base image
+FROM node:22-alpine
 
+# Set the working directory
 WORKDIR /app
 
-# Manually install PNPM instead of using Corepack
-RUN npm install -g pnpm@latest
-
-# Copy package.json and lockfile first for better caching
+# Copy package.json and package-lock.json to the working directory
 COPY package.json ./
+# COPY pnpm-lock.yaml ./
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Install dependencies using PNPM
+RUN npm install -g pnpm && pnpm install
 
-# ---- BUILD STAGE ----
-FROM base AS builder
-
-# Copy the full project
+# Copy the rest of the application code to the working directory
 COPY . .
 
-# Build Next.js for production
+# Build the Next.js application
 RUN pnpm build
 
-# ---- RUN STAGE ----
-FROM node:20-alpine AS runner
+# Expose the port on which the application will run (if applicable)
+EXPOSE 3004
 
-WORKDIR /app
-
-# Copy only required files from builder
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/.next/ .next/
-COPY --from=builder /app/public/ public/
-COPY --from=builder /app/node_modules/ node_modules/
-
-# Set env to production
-ENV NODE_ENV=production
-
-# Expose the port Next.js runs on
-EXPOSE 3000
-
-# Start Next.js
+# Start the application
 CMD ["pnpm", "start"]
+
+
+
+### HOW TO BUILD AND RUN??
+### Step 1: Build
+### docker build -t dashboard .
+### Step 2: Run
+### docker run -p 3000:3004 dashboard
+
+### I want to change port
+### docker run -p 4000:3004 dashboard
