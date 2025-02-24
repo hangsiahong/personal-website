@@ -3,8 +3,8 @@ FROM node:20-alpine AS base
 
 WORKDIR /app
 
-# Install PNPM
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Manually install PNPM instead of using Corepack
+RUN npm install -g pnpm@latest
 
 # Copy package.json and lockfile first for better caching
 COPY package.json pnpm-lock.yaml ./
