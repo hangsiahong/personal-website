@@ -8,20 +8,18 @@ WORKDIR /app
 COPY package.json ./
 # COPY pnpm-lock.yaml ./
 
-# Install dependencies using PNPM
-RUN npm install -g pnpm && pnpm install
 
 # Copy the rest of the application code to the working directory
 COPY . .
 
 # Build the Next.js application
-RUN pnpm build
+RUN npm run build
 
 # Expose the port on which the application will run (if applicable)
 EXPOSE 3004
 
 # Start the application
-CMD ["pnpm", "start"]
+CMD ["npm", "start"]
 
 
 
