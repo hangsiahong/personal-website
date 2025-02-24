@@ -1,40 +1,42 @@
-# Stage 1: Install dependencies and build the Next.js app
-FROM node:20-alpine AS builder
+# ---- BASE STAGE ----
+FROM node:20-alpine AS base
 
-# Set working directory
 WORKDIR /app
 
 # Install PNPM
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copy package.json and pnpm-lock.yaml
+# Copy package.json and lockfile first for better caching
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies with PNPM
-RUN pnpm install --frozen-lockfile
+# Install dependencies
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
-# Copy the rest of the application files
+# ---- BUILD STAGE ----
+FROM base AS builder
+
+# Copy the full project
 COPY . .
 
-# Build the application
+# Build Next.js for production
 RUN pnpm build
 
-# Stage 2: Create a minimal production image
+# ---- RUN STAGE ----
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Install only production dependencies
+# Copy only required files from builder
 COPY --from=builder /app/package.json ./
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/.next/ .next/
+COPY --from=builder /app/public/ public/
+COPY --from=builder /app/node_modules/ node_modules/
 
-# Set environment variables
+# Set env to production
 ENV NODE_ENV=production
-ENV PORT=3000
 
-# Expose the application port
+# Expose the port Next.js runs on
 EXPOSE 3000
 
-# Start the application
-CMD ["node", "server.js"]
+# Start Next.js
+CMD ["pnpm", "start"]
